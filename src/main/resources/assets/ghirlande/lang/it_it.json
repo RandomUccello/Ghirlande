@@ -19,7 +19,7 @@
   "tooltip.ghirlande.effect.blue": "Salto potenziato I",
   "tooltip.ghirlande.effect.white": "Knockback I a mano vuota",
   "tooltip.ghirlande.effect.orange": "Resistenza al fuoco",
-  "tooltip.ghirlande.effect.pink": "Addomestica, accoppia o cura animali a mano vuota",
+  "tooltip.ghirlande.effect.pink": "Click: addomestica o cura; Shift + click: accoppia",
   "tooltip.ghirlande.effect.magenta": "Efficienza di scavo I",
   "tooltip.ghirlande.effect.light_blue": "Respirazione I",
   "tooltip.ghirlande.effect.light_gray": "Shift + tasto destro: effetto farina d'ossa",
@@ -30,5 +30,6 @@
 
   "tooltip.ghirlande.charges": "Utilizzi: %s/%s",
   "tooltip.ghirlande.exhausted": "Potere esaurito",
+  "tooltip.ghirlande.hold_shift": "Tieni premuto Shift per vedere i fiori",
   "tooltip.ghirlande.flowers": "Fiori usati:"
 }

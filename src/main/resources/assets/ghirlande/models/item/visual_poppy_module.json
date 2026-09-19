@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "ghirlande:item/poppy_module"
+  },
+  "gui_light": "front"
+}

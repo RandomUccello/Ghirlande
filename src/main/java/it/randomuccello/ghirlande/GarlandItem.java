@@ -21,7 +21,7 @@ public final class GarlandItem extends Item {
             tooltip.accept(Component.translatable("tooltip.ghirlande.color." + data.color().id()).withStyle(ChatFormatting.GRAY));
             tooltip.accept(Component.translatable("tooltip.ghirlande.effect." + data.color().id()).withStyle(ChatFormatting.GREEN));
 
-            if (data.color() == GarlandColor.PINK || data.color() == GarlandColor.GRAY) {
+            if (data.color() == GarlandColor.PINK || data.color() == GarlandColor.LIGHT_GRAY) {
                 if (data.charges() > 0) {
                     tooltip.accept(Component.translatable("tooltip.ghirlande.charges", data.charges(), data.color().initialCharges())
                             .withStyle(ChatFormatting.YELLOW));

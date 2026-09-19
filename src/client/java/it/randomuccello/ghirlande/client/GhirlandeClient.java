@@ -1,12 +1,12 @@
 package it.randomuccello.ghirlande.client;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import it.randomuccello.ghirlande.GarlandData;
 import it.randomuccello.ghirlande.GhirlandeMod;
 import it.randomuccello.ghirlande.ModItems;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.special.SpecialModelRenderers;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -30,7 +30,7 @@ public final class GhirlandeClient implements ClientModInitializer {
                     return;
                 }
 
-                if (!Screen.hasShiftDown()) {
+                if (!isShiftDown()) {
                     lines.add(Component.translatable("tooltip.ghirlande.hold_shift")
                             .withStyle(ChatFormatting.DARK_GRAY));
                     return;
@@ -55,5 +55,10 @@ public final class GhirlandeClient implements ClientModInitializer {
                 }
             });
         });
+    }
+
+    private static boolean isShiftDown() {
+        return InputConstants.isKeyDown(InputConstants.KEY_LSHIFT)
+                || InputConstants.isKeyDown(InputConstants.KEY_RSHIFT);
     }
 }

@@ -15,53 +15,63 @@ import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
 /**
- * Flat flower-crown renderer following the square perimeter of a Minecraft head.
+ * Pixel-grid flower crown renderer.
  *
- * The eight saved crafting ingredients map one-to-one around the crown in ring
- * order: top-left, top, top-right, right, back-right, back, back-left, left.
- * Corner flowers are angled at 45 degrees so the wreath reads continuously from
- * front, side and three-quarter views without duplicating recipe ingredients.
+ * The crown is treated as an unwrapped 32x8 perimeter: front, right, back and
+ * left are four exact 8-pixel faces. The four corner flowers are shared by the
+ * two adjacent faces, so the eight saved recipe flowers remain the source of
+ * truth while the rendered wreath stays visually continuous around corners.
  */
 public final class GarlandSpecialRenderer implements SpecialModelRenderer<GarlandSpecialRenderer.RenderData> {
+    // Alpha 6 already established the correct vertical fit. Keep that baseline.
     private static final double BAND_Y = 0.640D;
     private static final double FLOWER_Y = 0.655D;
-    private static final double FACE_OFFSET = 0.008D;
-    private static final double FLOWER_OFFSET = 0.014D;
-    private static final float BAND_SCALE_X = 1.10F;
-    private static final float BAND_SCALE_Y = 0.22F;
-    private static final float FLOWER_SCALE = 0.46F;
 
+    // Almost flush to the player head: no wide floating side ring.
+    private static final double FACE_OFFSET = 0.0025D;
+    private static final double FLOWER_OFFSET = 0.0040D;
+
+    // The band slightly overlaps adjacent faces so the four 8px sections meet.
+    private static final float BAND_SCALE_X = 1.035F;
+    private static final float BAND_SCALE_Y = 0.285F;
+    private static final float FLOWER_SCALE = 0.420F;
+
+    /**
+     * Three visible flowers per face: left shared corner, local centre, right
+     * shared corner. Corner entries intentionally repeat the same recipe index
+     * on two adjacent faces; they are not extra flowers.
+     *
+     * Small Y offsets reproduce the approved 32x8 strip's controlled 0-2 pixel
+     * irregularity instead of placing all flowers on a ruler-straight row.
+     */
     private static final FlowerPlane[] FLOWER_PLANES = {
-            new FlowerPlane(0, 0.085D, 0.085D, -135.0F),
-            new FlowerPlane(1, 0.500D, -FLOWER_OFFSET, 180.0F),
-            new FlowerPlane(2, 0.915D, 0.085D, 135.0F),
-            new FlowerPlane(4, 1.0D + FLOWER_OFFSET, 0.500D, 90.0F),
-            new FlowerPlane(7, 0.915D, 0.915D, 45.0F),
-            new FlowerPlane(6, 0.500D, 1.0D + FLOWER_OFFSET, 0.0F),
-            new FlowerPlane(5, 0.085D, 0.915D, -45.0F),
-            new FlowerPlane(3, -FLOWER_OFFSET, 0.500D, -90.0F)
+            // Front: indices 0 - 1 - 2
+            new FlowerPlane(0, 0.070D, -FLOWER_OFFSET, 180.0F, -0.008D),
+            new FlowerPlane(1, 0.500D, -FLOWER_OFFSET, 180.0F,  0.004D),
+            new FlowerPlane(2, 0.930D, -FLOWER_OFFSET, 180.0F, -0.002D),
+
+            // Right: indices 2 - 4 - 7
+            new FlowerPlane(2, 1.0D + FLOWER_OFFSET, 0.070D, 90.0F, -0.002D),
+            new FlowerPlane(4, 1.0D + FLOWER_OFFSET, 0.500D, 90.0F, -0.010D),
+            new FlowerPlane(7, 1.0D + FLOWER_OFFSET, 0.930D, 90.0F,  0.003D),
+
+            // Back: indices 7 - 6 - 5
+            new FlowerPlane(7, 0.930D, 1.0D + FLOWER_OFFSET, 0.0F,  0.003D),
+            new FlowerPlane(6, 0.500D, 1.0D + FLOWER_OFFSET, 0.0F, -0.004D),
+            new FlowerPlane(5, 0.070D, 1.0D + FLOWER_OFFSET, 0.0F,  0.006D),
+
+            // Left: indices 5 - 3 - 0
+            new FlowerPlane(5, -FLOWER_OFFSET, 0.930D, -90.0F,  0.006D),
+            new FlowerPlane(3, -FLOWER_OFFSET, 0.500D, -90.0F,  0.000D),
+            new FlowerPlane(0, -FLOWER_OFFSET, 0.070D, -90.0F, -0.008D)
     };
 
     private static final FaceBand[] FACE_BANDS = {
             new FaceBand(0.50D, -FACE_OFFSET, 180.0F),
-            new FaceBand(-FACE_OFFSET, 0.50D, -90.0F),
             new FaceBand(1.0D + FACE_OFFSET, 0.50D, 90.0F),
-            new FaceBand(0.50D, 1.0D + FACE_OFFSET, 0.0F)
+            new FaceBand(0.50D, 1.0D + FACE_OFFSET, 0.0F),
+            new FaceBand(-FACE_OFFSET, 0.50D, -90.0F)
     };
-
-    /**
-     * Small diagonal bridge pieces hide the hard seams where the four flat
-     * face bands meet. They sit almost flush to the head so side sections do
-     * not look as if they float farther forward than the forehead/back.
-     */
-    private static final FaceBand[] CORNER_BANDS = {
-            new FaceBand(0.035D, 0.035D, -135.0F),
-            new FaceBand(0.965D, 0.035D, 135.0F),
-            new FaceBand(0.965D, 0.965D, 45.0F),
-            new FaceBand(0.035D, 0.965D, -45.0F)
-    };
-
-    private static final float CORNER_BAND_SCALE_X = 0.28F;
 
     @Override
     public RenderData extractArgument(ItemStack stack) {
@@ -76,18 +86,12 @@ public final class GarlandSpecialRenderer implements SpecialModelRenderer<Garlan
             return;
         }
 
+        // One continuous-looking vine strip across the four exact head faces.
         ItemStack band = GarlandVisuals.vineFace();
         for (int i = 0; i < FACE_BANDS.length; i++) {
             FaceBand face = FACE_BANDS[i];
             submitPlane(band, face.x(), BAND_Y, face.z(), face.yaw(),
                     BAND_SCALE_X, BAND_SCALE_Y, 100 + i,
-                    poseStack, collector, light, overlay, outlineColor);
-        }
-
-        for (int i = 0; i < CORNER_BANDS.length; i++) {
-            FaceBand corner = CORNER_BANDS[i];
-            submitPlane(band, corner.x(), BAND_Y, corner.z(), corner.yaw(),
-                    CORNER_BAND_SCALE_X, BAND_SCALE_Y, 120 + i,
                     poseStack, collector, light, overlay, outlineColor);
         }
 
@@ -103,7 +107,7 @@ public final class GarlandSpecialRenderer implements SpecialModelRenderer<Garlan
                 continue;
             }
 
-            submitPlane(flower, plane.x(), FLOWER_Y, plane.z(), plane.yaw(),
+            submitPlane(flower, plane.x(), FLOWER_Y + plane.yOffset(), plane.z(), plane.yaw(),
                     FLOWER_SCALE, FLOWER_SCALE, 200 + i,
                     poseStack, collector, light, overlay, outlineColor);
         }
@@ -139,11 +143,11 @@ public final class GarlandSpecialRenderer implements SpecialModelRenderer<Garlan
 
     @Override
     public void getExtents(Consumer<Vector3fc> output) {
-        output.accept(new Vector3f(-0.14F, 0.0F, -0.14F));
-        output.accept(new Vector3f(1.14F, 1.08F, 1.14F));
+        output.accept(new Vector3f(-0.05F, 0.0F, -0.05F));
+        output.accept(new Vector3f(1.05F, 1.02F, 1.05F));
     }
 
-    private record FlowerPlane(int flowerIndex, double x, double z, float yaw) {
+    private record FlowerPlane(int flowerIndex, double x, double z, float yaw, double yOffset) {
     }
 
     private record FaceBand(double x, double z, float yaw) {

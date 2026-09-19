@@ -30,6 +30,30 @@ jobs:
       - name: Build
         run: gradle build --stacktrace
 
+      - name: Server smoke test
+        shell: bash
+        run: |
+          mkdir -p run
+          echo 'eula=true' > run/eula.txt
+          set +e
+          timeout 75s gradle runServer --stacktrace --args nogui
+          code=$?
+          set -e
+          if [ "$code" -ne 0 ] && [ "$code" -ne 124 ]; then
+            exit "$code"
+          fi
+
+      - name: Client resource/render smoke test
+        shell: bash
+        run: |
+          set +e
+          timeout 75s xvfb-run -a gradle runClient --stacktrace
+          code=$?
+          set -e
+          if [ "$code" -ne 0 ] && [ "$code" -ne 124 ]; then
+            exit "$code"
+          fi
+
       - name: Upload mod jars
         if: success()
         uses: actions/upload-artifact@v4

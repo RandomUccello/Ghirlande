@@ -15,51 +15,71 @@ import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
 /**
- * Flat square-perimeter garland renderer.
+ * Flat flower-crown renderer following the square perimeter of a Minecraft head.
  *
- * Minecraft heads are square, so the wreath follows the four faces of the head
- * instead of placing ingredients on a mathematical circle. The eight saved
- * crafting ingredients keep their crafting-grid order:
- *
- * 0 1 2  -> front forehead
- * 3   4  -> left/right temples
- * 5 6 7  -> back of the head
- *
- * The greenery is rendered as four thin continuous face bands. Flower heads
- * are independent 2D planes placed on top, so the crown stays delicate and the
- * blossoms do not inherit bulky stems or overlapping connector geometry.
+ * The eight saved crafting ingredients stay the source of truth. Corner flowers
+ * are submitted once on each adjacent face, giving twelve visible planes while
+ * still representing exactly eight logical flowers. This makes the wreath read
+ * as a continuous crown from front, side and back without inventing ingredients.
  */
 public final class GarlandSpecialRenderer implements SpecialModelRenderer<GarlandSpecialRenderer.RenderData> {
-    private static final double BAND_Y = 0.705D;
-    private static final double FLOWER_Y = 0.730D;
-    private static final double FACE_OFFSET = 0.055D;
+    // Raised to the upper forehead/hairline instead of crossing the eyes.
+    private static final double BAND_Y = 0.865D;
+    private static final double FLOWER_Y = 0.885D;
 
-    // Full-width thin band on each face. X is tangent to the face, Y vertical.
-    private static final float BAND_SCALE_X = 1.18F;
-    private static final float BAND_SCALE_Y = 0.55F;
+    // Keep the wreath just outside the head skin, with a tiny flower offset to
+    // prevent coplanar flicker against the greenery.
+    private static final double FACE_OFFSET = 0.040D;
+    private static final double FLOWER_OFFSET = 0.052D;
 
-    // Head sprites are intentionally compact inside their 16x16 canvases.
-    // This scale makes each blossom roughly one fifth to one quarter of a head
-    // wide, matching the approved concept instead of dominating the face.
-    private static final float FLOWER_SCALE = 0.52F;
+    // Thin continuous greenery, intentionally much less bulky than alpha.2.
+    private static final float BAND_SCALE_X = 1.10F;
+    private static final float BAND_SCALE_Y = 0.30F;
 
-    // 0 1 2 / 3 _ 4 / 5 6 7. Coordinates follow the square head perimeter.
-    private static final Slot[] FLOWER_SLOTS = {
-            new Slot(0.18D, -FACE_OFFSET, 180.0F),
-            new Slot(0.50D, -FACE_OFFSET, 180.0F),
-            new Slot(0.82D, -FACE_OFFSET, 180.0F),
-            new Slot(-FACE_OFFSET, 0.50D, -90.0F),
-            new Slot(1.0D + FACE_OFFSET, 0.50D, 90.0F),
-            new Slot(0.18D, 1.0D + FACE_OFFSET, 0.0F),
-            new Slot(0.50D, 1.0D + FACE_OFFSET, 0.0F),
-            new Slot(0.82D, 1.0D + FACE_OFFSET, 0.0F)
+    // Final simple-flower standard: blossoms are small accents on the wreath,
+    // approximately 20-25% of a head width rather than face-sized sprites.
+    private static final float FLOWER_SCALE = 0.235F;
+
+    /*
+     * Visible planes. The integer selects one of the eight recipe flowers:
+     *
+     * recipe: 0 1 2 / 3 _ 4 / 5 6 7
+     *
+     * front: 0 1 2
+     * left : 0 3 5   (corner flowers 0/5 are shared)
+     * back : 5 6 7
+     * right: 2 4 7   (corner flowers 2/7 are shared)
+     *
+     * This yields the visual density of the approved concept while preserving
+     * the exact flower identities used in crafting.
+     */
+    private static final FlowerPlane[] FLOWER_PLANES = {
+            // Front forehead, left to right.
+            new FlowerPlane(0, 0.19D, -FLOWER_OFFSET, 180.0F),
+            new FlowerPlane(1, 0.50D, -FLOWER_OFFSET, 180.0F),
+            new FlowerPlane(2, 0.81D, -FLOWER_OFFSET, 180.0F),
+
+            // Left temple / side, front to back.
+            new FlowerPlane(0, -FLOWER_OFFSET, 0.19D, -90.0F),
+            new FlowerPlane(3, -FLOWER_OFFSET, 0.50D, -90.0F),
+            new FlowerPlane(5, -FLOWER_OFFSET, 0.81D, -90.0F),
+
+            // Back, left to right when viewed from behind.
+            new FlowerPlane(5, 0.19D, 1.0D + FLOWER_OFFSET, 0.0F),
+            new FlowerPlane(6, 0.50D, 1.0D + FLOWER_OFFSET, 0.0F),
+            new FlowerPlane(7, 0.81D, 1.0D + FLOWER_OFFSET, 0.0F),
+
+            // Right temple / side, back to front in local Z.
+            new FlowerPlane(7, 1.0D + FLOWER_OFFSET, 0.81D, 90.0F),
+            new FlowerPlane(4, 1.0D + FLOWER_OFFSET, 0.50D, 90.0F),
+            new FlowerPlane(2, 1.0D + FLOWER_OFFSET, 0.19D, 90.0F)
     };
 
     private static final FaceBand[] FACE_BANDS = {
-            new FaceBand(0.50D, -FACE_OFFSET + 0.010D, 180.0F),
-            new FaceBand(-FACE_OFFSET + 0.010D, 0.50D, -90.0F),
-            new FaceBand(1.0D + FACE_OFFSET - 0.010D, 0.50D, 90.0F),
-            new FaceBand(0.50D, 1.0D + FACE_OFFSET - 0.010D, 0.0F)
+            new FaceBand(0.50D, -FACE_OFFSET, 180.0F),
+            new FaceBand(-FACE_OFFSET, 0.50D, -90.0F),
+            new FaceBand(1.0D + FACE_OFFSET, 0.50D, 90.0F),
+            new FaceBand(0.50D, 1.0D + FACE_OFFSET, 0.0F)
     };
 
     @Override
@@ -84,15 +104,19 @@ public final class GarlandSpecialRenderer implements SpecialModelRenderer<Garlan
         }
 
         int count = Math.min(8, flowers.size());
-        for (int i = 0; i < count; i++) {
-            ItemStack flower = GarlandVisuals.headFor(flowers.get(i));
+        for (int i = 0; i < FLOWER_PLANES.length; i++) {
+            FlowerPlane plane = FLOWER_PLANES[i];
+            if (plane.flowerIndex() >= count) {
+                continue;
+            }
+
+            ItemStack flower = GarlandVisuals.headFor(flowers.get(plane.flowerIndex()));
             if (flower.isEmpty()) {
                 continue;
             }
 
-            Slot slot = FLOWER_SLOTS[i];
-            submitPlane(flower, slot.x(), FLOWER_Y, slot.z(), slot.yaw(),
-                    FLOWER_SCALE, FLOWER_SCALE, i,
+            submitPlane(flower, plane.x(), FLOWER_Y, plane.z(), plane.yaw(),
+                    FLOWER_SCALE, FLOWER_SCALE, 200 + i,
                     poseStack, collector, light, overlay, outlineColor);
         }
     }
@@ -127,11 +151,11 @@ public final class GarlandSpecialRenderer implements SpecialModelRenderer<Garlan
 
     @Override
     public void getExtents(Consumer<Vector3fc> output) {
-        output.accept(new Vector3f(-0.18F, 0.0F, -0.18F));
-        output.accept(new Vector3f(1.18F, 1.10F, 1.18F));
+        output.accept(new Vector3f(-0.12F, 0.0F, -0.12F));
+        output.accept(new Vector3f(1.12F, 1.10F, 1.12F));
     }
 
-    private record Slot(double x, double z, float yaw) {
+    private record FlowerPlane(int flowerIndex, double x, double z, float yaw) {
     }
 
     private record FaceBand(double x, double z, float yaw) {

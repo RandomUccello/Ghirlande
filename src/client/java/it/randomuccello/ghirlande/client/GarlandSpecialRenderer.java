@@ -23,22 +23,22 @@ import org.joml.Vector3fc;
  * front, side and three-quarter views without duplicating recipe ingredients.
  */
 public final class GarlandSpecialRenderer implements SpecialModelRenderer<GarlandSpecialRenderer.RenderData> {
-    private static final double BAND_Y = 0.765D;
-    private static final double FLOWER_Y = 0.790D;
-    private static final double FACE_OFFSET = 0.034D;
-    private static final double FLOWER_OFFSET = 0.044D;
-    private static final float BAND_SCALE_X = 1.06F;
-    private static final float BAND_SCALE_Y = 0.19F;
-    private static final float FLOWER_SCALE = 0.40F;
+    private static final double BAND_Y = 0.640D;
+    private static final double FLOWER_Y = 0.655D;
+    private static final double FACE_OFFSET = 0.008D;
+    private static final double FLOWER_OFFSET = 0.014D;
+    private static final float BAND_SCALE_X = 1.10F;
+    private static final float BAND_SCALE_Y = 0.22F;
+    private static final float FLOWER_SCALE = 0.46F;
 
     private static final FlowerPlane[] FLOWER_PLANES = {
-            new FlowerPlane(0, -0.010D, -0.010D, -135.0F),
+            new FlowerPlane(0, 0.085D, 0.085D, -135.0F),
             new FlowerPlane(1, 0.500D, -FLOWER_OFFSET, 180.0F),
-            new FlowerPlane(2, 1.010D, -0.010D, 135.0F),
+            new FlowerPlane(2, 0.915D, 0.085D, 135.0F),
             new FlowerPlane(4, 1.0D + FLOWER_OFFSET, 0.500D, 90.0F),
-            new FlowerPlane(7, 1.010D, 1.010D, 45.0F),
+            new FlowerPlane(7, 0.915D, 0.915D, 45.0F),
             new FlowerPlane(6, 0.500D, 1.0D + FLOWER_OFFSET, 0.0F),
-            new FlowerPlane(5, -0.010D, 1.010D, -45.0F),
+            new FlowerPlane(5, 0.085D, 0.915D, -45.0F),
             new FlowerPlane(3, -FLOWER_OFFSET, 0.500D, -90.0F)
     };
 
@@ -48,6 +48,20 @@ public final class GarlandSpecialRenderer implements SpecialModelRenderer<Garlan
             new FaceBand(1.0D + FACE_OFFSET, 0.50D, 90.0F),
             new FaceBand(0.50D, 1.0D + FACE_OFFSET, 0.0F)
     };
+
+    /**
+     * Small diagonal bridge pieces hide the hard seams where the four flat
+     * face bands meet. They sit almost flush to the head so side sections do
+     * not look as if they float farther forward than the forehead/back.
+     */
+    private static final FaceBand[] CORNER_BANDS = {
+            new FaceBand(0.035D, 0.035D, -135.0F),
+            new FaceBand(0.965D, 0.035D, 135.0F),
+            new FaceBand(0.965D, 0.965D, 45.0F),
+            new FaceBand(0.035D, 0.965D, -45.0F)
+    };
+
+    private static final float CORNER_BAND_SCALE_X = 0.28F;
 
     @Override
     public RenderData extractArgument(ItemStack stack) {
@@ -67,6 +81,13 @@ public final class GarlandSpecialRenderer implements SpecialModelRenderer<Garlan
             FaceBand face = FACE_BANDS[i];
             submitPlane(band, face.x(), BAND_Y, face.z(), face.yaw(),
                     BAND_SCALE_X, BAND_SCALE_Y, 100 + i,
+                    poseStack, collector, light, overlay, outlineColor);
+        }
+
+        for (int i = 0; i < CORNER_BANDS.length; i++) {
+            FaceBand corner = CORNER_BANDS[i];
+            submitPlane(band, corner.x(), BAND_Y, corner.z(), corner.yaw(),
+                    CORNER_BAND_SCALE_X, BAND_SCALE_Y, 120 + i,
                     poseStack, collector, light, overlay, outlineColor);
         }
 

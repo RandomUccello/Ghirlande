@@ -1,0 +1,12 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "ghirlande:item/garland",
+    "model": {
+      "type": "ghirlande:garland"
+    }
+  },
+  "properties": {
+    "oversized_in_gui": true
+  }
+}

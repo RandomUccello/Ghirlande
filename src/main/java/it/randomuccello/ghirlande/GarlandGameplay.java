@@ -94,7 +94,7 @@ public final class GarlandGameplay {
 
             ItemStack garland = equippedGarlandStack(serverPlayer);
             Optional<GarlandData> data = GarlandData.fromStack(garland);
-            if (data.isEmpty() || data.get().color() != GarlandColor.GRAY || data.get().charges() <= 0) {
+            if (data.isEmpty() || data.get().color() != GarlandColor.LIGHT_GRAY || data.get().charges() <= 0) {
                 return InteractionResult.PASS;
             }
 
@@ -174,7 +174,7 @@ public final class GarlandGameplay {
             case BLUE -> refresh(player, MobEffects.JUMP_BOOST);
             case ORANGE -> refresh(player, MobEffects.FIRE_RESISTANCE);
             case MAGENTA -> refresh(player, MobEffects.HASTE);
-            case LIGHT_GRAY -> refresh(player, MobEffects.RESISTANCE);
+            case GRAY -> refresh(player, MobEffects.RESISTANCE);
             case CYAN -> refresh(player, MobEffects.NIGHT_VISION);
             case BLACK -> refresh(player, MobEffects.STRENGTH);
             default -> {

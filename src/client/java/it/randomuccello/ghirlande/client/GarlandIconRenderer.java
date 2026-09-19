@@ -17,10 +17,9 @@ import org.joml.Vector3fc;
 /**
  * Flat dynamic inventory icon.
  *
- * All layers are real two-sided planes. Rear flowers sit on a deeper Z layer,
- * the vine ring is in the middle, and the three front crafting-row flowers sit
- * in front. The deterministic depth separation removes the z-fighting present
- * in alpha.1 while preserving the approved 2D icon composition.
+ * The icon follows the approved composition: three clear front flowers over a
+ * thin wreath, with the rear flowers only suggested. All layers are separated
+ * in depth so there is no z-fighting.
  */
 public final class GarlandIconRenderer implements SpecialModelRenderer<GarlandIconRenderer.RenderData> {
     @Override
@@ -36,30 +35,26 @@ public final class GarlandIconRenderer implements SpecialModelRenderer<GarlandIc
             return;
         }
 
-        // Rear flowers: deliberately faint, small and on the deepest plane.
         if (flowers.size() >= 8) {
-            submitPlane(GarlandVisuals.fadedHeadFor(flowers.get(5)), 0.37D, 0.39D, 0.44D,
-                    -10.0F, 0.72F, 5, poseStack, collector, light, overlay, outlineColor);
-            submitPlane(GarlandVisuals.fadedHeadFor(flowers.get(6)), 0.50D, 0.35D, 0.44D,
-                    0.0F, 0.72F, 6, poseStack, collector, light, overlay, outlineColor);
-            submitPlane(GarlandVisuals.fadedHeadFor(flowers.get(7)), 0.63D, 0.39D, 0.44D,
-                    10.0F, 0.72F, 7, poseStack, collector, light, overlay, outlineColor);
+            submitPlane(GarlandVisuals.fadedHeadFor(flowers.get(5)), 0.36D, 0.39D, 0.43D,
+                    -8.0F, 0.48F, 5, poseStack, collector, light, overlay, outlineColor);
+            submitPlane(GarlandVisuals.fadedHeadFor(flowers.get(6)), 0.50D, 0.36D, 0.43D,
+                    0.0F, 0.48F, 6, poseStack, collector, light, overlay, outlineColor);
+            submitPlane(GarlandVisuals.fadedHeadFor(flowers.get(7)), 0.64D, 0.39D, 0.43D,
+                    8.0F, 0.48F, 7, poseStack, collector, light, overlay, outlineColor);
         }
 
-        // One flat wreath silhouette in the middle layer.
         submitPlane(GarlandVisuals.vineIcon(), 0.50D, 0.50D, 0.50D,
-                0.0F, 0.90F, 20, poseStack, collector, light, overlay, outlineColor);
+                0.0F, 0.92F, 20, poseStack, collector, light, overlay, outlineColor);
 
-        // Only the three top-row/forehead ingredients are prominent, matching
-        // the approved inventory mock-up.
         int visible = Math.min(3, flowers.size());
-        double[] xs = {0.32D, 0.50D, 0.68D};
+        double[] xs = {0.30D, 0.50D, 0.70D};
         double[] ys = {0.58D, 0.61D, 0.58D};
-        float[] rotations = {-8.0F, 0.0F, 8.0F};
+        float[] rotations = {-7.0F, 0.0F, 7.0F};
 
         for (int i = 0; i < visible; i++) {
             submitPlane(GarlandVisuals.headFor(flowers.get(i)),
-                    xs[i], ys[i], 0.57D, rotations[i], 0.92F, 30 + i,
+                    xs[i], ys[i], 0.58D, rotations[i], 0.66F, 30 + i,
                     poseStack, collector, light, overlay, outlineColor);
         }
     }
@@ -75,7 +70,7 @@ public final class GarlandIconRenderer implements SpecialModelRenderer<GarlandIc
         poseStack.pushPose();
         poseStack.translate(x, y, z);
         poseStack.rotateDegrees(Axis.ZP, zRotation);
-        poseStack.scale(scale, scale, scale);
+        poseStack.scale(scale, scale, 1.0F);
 
         ItemStackRenderState renderState = new ItemStackRenderState();
         Minecraft minecraft = Minecraft.getInstance();

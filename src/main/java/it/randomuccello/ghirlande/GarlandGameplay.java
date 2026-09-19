@@ -1,5 +1,6 @@
 package it.randomuccello.ghirlande;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,13 +39,27 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class GarlandGameplay {
     private static final Identifier RED_HEALTH_ID = GhirlandeMod.id("red_garland_health");
     private static final Identifier WHITE_KNOCKBACK_ID = GhirlandeMod.id("white_garland_knockback");
+
+    private static final Identifier WOLF_ID = Identifier.fromNamespaceAndPath("minecraft", "wolf");
+    private static final Identifier CAT_ID = Identifier.fromNamespaceAndPath("minecraft", "cat");
     private static final Identifier PARROT_ID = Identifier.fromNamespaceAndPath("minecraft", "parrot");
+    private static final Identifier NAUTILUS_ID = Identifier.fromNamespaceAndPath("minecraft", "nautilus");
     private static final Identifier ZOMBIE_NAUTILUS_ID = Identifier.fromNamespaceAndPath("minecraft", "zombie_nautilus");
 
     private static final AttributeModifier RED_HEALTH =
             new AttributeModifier(RED_HEALTH_ID, 4.0D, AttributeModifier.Operation.ADD_VALUE);
     private static final AttributeModifier WHITE_KNOCKBACK =
             new AttributeModifier(WHITE_KNOCKBACK_ID, 1.0D, AttributeModifier.Operation.ADD_VALUE);
+
+    private static final List<Holder<MobEffect>> GARLAND_PASSIVE_EFFECTS = List.of(
+            MobEffects.SPEED,
+            MobEffects.JUMP_BOOST,
+            MobEffects.FIRE_RESISTANCE,
+            MobEffects.HASTE,
+            MobEffects.RESISTANCE,
+            MobEffects.NIGHT_VISION,
+            MobEffects.STRENGTH
+    );
 
     private static final Map<EntityType<?>, Boolean> HAS_BREEDING_FOOD = new ConcurrentHashMap<>();
 
@@ -56,8 +71,8 @@ public final class GarlandGameplay {
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                 updateRedHealth(player);
                 updateWhiteKnockback(player);
+                updatePassiveEffects(player);
                 if (player.tickCount % 10 == 0) {
-                    updatePassiveEffect(player);
                     ensureRespiration(player);
                 }
             }
@@ -77,7 +92,8 @@ public final class GarlandGameplay {
                 return InteractionResult.PASS;
             }
 
-            if (tryPinkInteraction(serverPlayer, animal)) {
+            boolean breedingRequested = player.isSecondaryUseActive();
+            if (tryPinkInteraction(serverPlayer, animal, breedingRequested)) {
                 GarlandData.consumeCharge(garland);
                 return InteractionResult.SUCCESS_SERVER;
             }
@@ -164,21 +180,55 @@ public final class GarlandGameplay {
         }
     }
 
-    private static void updatePassiveEffect(ServerPlayer player) {
+    private static void updatePassiveEffects(ServerPlayer player) {
         GarlandColor color = equippedGarland(player)
                 .map(GarlandData::color)
                 .orElse(GarlandColor.MIXED);
+        Holder<MobEffect> desired = passiveEffectFor(color);
 
-        switch (color) {
-            case YELLOW -> refresh(player, MobEffects.SPEED);
-            case BLUE -> refresh(player, MobEffects.JUMP_BOOST);
-            case ORANGE -> refresh(player, MobEffects.FIRE_RESISTANCE);
-            case MAGENTA -> refresh(player, MobEffects.HASTE);
-            case GRAY -> refresh(player, MobEffects.RESISTANCE);
-            case CYAN -> refresh(player, MobEffects.NIGHT_VISION);
-            case BLACK -> refresh(player, MobEffects.STRENGTH);
-            default -> {
+        for (Holder<MobEffect> effect : GARLAND_PASSIVE_EFFECTS) {
+            if (effect.equals(desired)) {
+                ensureInfiniteGarlandEffect(player, effect);
+            } else {
+                removeInfiniteGarlandEffect(player, effect);
             }
+        }
+    }
+
+    private static Holder<MobEffect> passiveEffectFor(GarlandColor color) {
+        return switch (color) {
+            case YELLOW -> MobEffects.SPEED;
+            case BLUE -> MobEffects.JUMP_BOOST;
+            case ORANGE -> MobEffects.FIRE_RESISTANCE;
+            case MAGENTA -> MobEffects.HASTE;
+            case GRAY -> MobEffects.RESISTANCE;
+            case CYAN -> MobEffects.NIGHT_VISION;
+            case BLACK -> MobEffects.STRENGTH;
+            default -> null;
+        };
+    }
+
+    private static void ensureInfiniteGarlandEffect(ServerPlayer player, Holder<MobEffect> effect) {
+        MobEffectInstance current = player.getEffect(effect);
+        if (current == null) {
+            player.addEffect(new MobEffectInstance(
+                    effect,
+                    MobEffectInstance.INFINITE_DURATION,
+                    0,
+                    true,
+                    false,
+                    true
+            ));
+        }
+    }
+
+    private static void removeInfiniteGarlandEffect(ServerPlayer player, Holder<MobEffect> effect) {
+        MobEffectInstance current = player.getEffect(effect);
+        if (current != null
+                && current.getAmplifier() == 0
+                && current.isInfiniteDuration()
+                && current.isAmbient()) {
+            player.removeEffect(effect);
         }
     }
 
@@ -198,40 +248,103 @@ public final class GarlandGameplay {
         }
     }
 
-    private static void refresh(ServerPlayer player, Holder<MobEffect> effect) {
-        MobEffectInstance current = player.getEffect(effect);
-        if (current != null && current.getAmplifier() > 0) {
-            return;
-        }
-        player.addEffect(new MobEffectInstance(effect, 30, 0, true, false, true));
-    }
+    private static boolean tryPinkInteraction(ServerPlayer player, Animal animal, boolean breedingRequested) {
+        if (breedingRequested) {
+            if (animal.isBaby()) {
+                return false;
+            }
 
-    private static boolean tryPinkInteraction(ServerPlayer player, Animal animal) {
-        if ((animal.isInLove() || animal.getAge() > 0) && animal.getHealth() < animal.getMaxHealth()) {
+            if (canHealAfterBreeding(animal)) {
+                animal.heal(2.0F);
+                return true;
+            }
+
+            Identifier typeId = BuiltInRegistries.ENTITY_TYPE.getKey(animal.getType());
+            if (PARROT_ID.equals(typeId) || ZOMBIE_NAUTILUS_ID.equals(typeId)) {
+                return false;
+            }
+
+            if (animal instanceof TamableAnimal tameable && !tameable.isTame()) {
+                return false;
+            }
+            if (animal instanceof AbstractHorse horse && !horse.isTamed()) {
+                return false;
+            }
+
+            if (hasVanillaBreedingFood(animal) && animal.canFallInLove()) {
+                animal.setInLove(player);
+                return true;
+            }
+            return false;
+        }
+
+        if (tryTamingAttempt(player, animal)) {
+            return true;
+        }
+
+        if (canHealAfterBreeding(animal)) {
             animal.heal(2.0F);
             return true;
         }
 
-        if (animal instanceof TamableAnimal tameable && !tameable.isTame()) {
-            tameable.tame(player);
+        return false;
+    }
+
+    private static boolean tryTamingAttempt(ServerPlayer player, Animal animal) {
+        if (animal instanceof AbstractHorse horse && !horse.isTamed()) {
+            if (horse.isBaby()) {
+                return false;
+            }
+
+            int maxTemper = horse.getMaxTemper();
+            boolean tamed = maxTemper > 0 && horse.getRandom().nextInt(maxTemper) < horse.getTemper();
+            if (tamed) {
+                horse.tameWithName(player);
+                horse.level().broadcastEntityEvent(horse, (byte) 7);
+            } else {
+                horse.modifyTemper(5);
+                horse.level().broadcastEntityEvent(horse, (byte) 6);
+            }
             return true;
         }
 
-        if (animal instanceof AbstractHorse horse && !horse.isTamed()) {
-            return horse.tameWithName(player);
-        }
+        if (animal instanceof TamableAnimal tameable && !tameable.isTame()) {
+            Identifier typeId = BuiltInRegistries.ENTITY_TYPE.getKey(animal.getType());
+            int denominator = tamingChanceDenominator(typeId);
+            if (denominator <= 0) {
+                return false;
+            }
 
-        Identifier typeId = BuiltInRegistries.ENTITY_TYPE.getKey(animal.getType());
-        if (PARROT_ID.equals(typeId) || ZOMBIE_NAUTILUS_ID.equals(typeId)) {
-            return false;
-        }
-
-        if (hasVanillaBreedingFood(animal) && animal.canFallInLove()) {
-            animal.setInLove(player);
+            boolean tamed = tameable.getRandom().nextInt(denominator) == 0;
+            if (tamed) {
+                tameable.tame(player);
+                tameable.getNavigation().stop();
+                tameable.level().broadcastEntityEvent(tameable, (byte) 7);
+            } else {
+                tameable.level().broadcastEntityEvent(tameable, (byte) 6);
+            }
             return true;
         }
 
         return false;
+    }
+
+    private static int tamingChanceDenominator(Identifier typeId) {
+        if (PARROT_ID.equals(typeId)) {
+            return 10;
+        }
+        if (WOLF_ID.equals(typeId)
+                || CAT_ID.equals(typeId)
+                || NAUTILUS_ID.equals(typeId)
+                || ZOMBIE_NAUTILUS_ID.equals(typeId)) {
+            return 3;
+        }
+        return -1;
+    }
+
+    private static boolean canHealAfterBreeding(Animal animal) {
+        return (animal.isInLove() || animal.getAge() > 0)
+                && animal.getHealth() < animal.getMaxHealth();
     }
 
     private static boolean hasVanillaBreedingFood(Animal animal) {

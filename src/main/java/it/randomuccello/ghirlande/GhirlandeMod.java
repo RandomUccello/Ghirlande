@@ -13,6 +13,7 @@ public final class GhirlandeMod implements ModInitializer {
     public void onInitialize() {
         ModItems.initialize();
         ModRecipes.initialize();
+        GarlandGameplay.register();
         LOGGER.info("Ghirlande initialized.");
     }
 

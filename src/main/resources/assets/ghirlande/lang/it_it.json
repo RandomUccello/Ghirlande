@@ -22,10 +22,10 @@
   "tooltip.ghirlande.effect.pink": "Addomestica, accoppia o cura animali a mano vuota",
   "tooltip.ghirlande.effect.magenta": "Efficienza di scavo I",
   "tooltip.ghirlande.effect.light_blue": "Respirazione I",
-  "tooltip.ghirlande.effect.light_gray": "Resistenza I",
+  "tooltip.ghirlande.effect.light_gray": "Shift + tasto destro: effetto farina d'ossa",
   "tooltip.ghirlande.effect.cyan": "Visione notturna",
   "tooltip.ghirlande.effect.black": "Forza I",
-  "tooltip.ghirlande.effect.gray": "Shift + tasto destro: effetto farina d'ossa",
+  "tooltip.ghirlande.effect.gray": "Resistenza I",
   "tooltip.ghirlande.effect.mixed": "Nessun effetto",
 
   "tooltip.ghirlande.charges": "Utilizzi: %s/%s",

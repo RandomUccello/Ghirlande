@@ -1,7 +1,18 @@
 {
-  "parent": "minecraft:item/generated",
+  "ambientocclusion": false,
+  "gui_light": "front",
   "textures": {
-    "layer0": "ghirlande:item/poppy_module"
+    "layer0": "ghirlande:item/poppy_head"
   },
-  "gui_light": "front"
+  "elements": [
+    {
+      "from": [0, 0, 7.99],
+      "to": [16, 16, 8.01],
+      "shade": false,
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#layer0"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#layer0"}
+      }
+    }
+  ]
 }

@@ -4,12 +4,18 @@ import it.randomuccello.ghirlande.GarlandData;
 import it.randomuccello.ghirlande.GhirlandeMod;
 import java.util.List;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
+/**
+ * Visual-only helpers for the modular garland prototype.
+ *
+ * The graphics prototype deliberately supports only dandelion and poppy with
+ * custom sprites. Unsupported flowers return an empty visual instead of
+ * falling back to vanilla item models, preventing accidental 3D flowers from
+ * leaking into the new flat rendering pipeline.
+ */
 final class GarlandVisuals {
     private static final Identifier DANDELION_ID =
             Identifier.fromNamespaceAndPath("minecraft", "dandelion");
@@ -25,19 +31,23 @@ final class GarlandVisuals {
                 .orElse(List.of());
     }
 
-    static ItemStack moduleFor(String rawId) {
-        return moduleFor(rawId, false);
+    static ItemStack headFor(String rawId) {
+        return headFor(rawId, false);
     }
 
-    static ItemStack fadedModuleFor(String rawId) {
-        return moduleFor(rawId, true);
+    static ItemStack fadedHeadFor(String rawId) {
+        return headFor(rawId, true);
     }
 
     static ItemStack vineIcon() {
         return modelStack("visual_vine_icon");
     }
 
-    private static ItemStack moduleFor(String rawId, boolean faded) {
+    static ItemStack vineSegment() {
+        return modelStack("visual_vine_segment");
+    }
+
+    private static ItemStack headFor(String rawId, boolean faded) {
         Identifier id = Identifier.tryParse(rawId);
         if (id == null) {
             return ItemStack.EMPTY;
@@ -55,11 +65,7 @@ final class GarlandVisuals {
                     : "visual_poppy_module");
         }
 
-        Item item = BuiltInRegistries.ITEM.getValue(id);
-        if (item == null || item == Items.AIR) {
-            return ItemStack.EMPTY;
-        }
-        return new ItemStack(item);
+        return ItemStack.EMPTY;
     }
 
     private static ItemStack modelStack(String modelId) {

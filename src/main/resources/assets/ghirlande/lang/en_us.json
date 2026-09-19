@@ -19,7 +19,7 @@
   "tooltip.ghirlande.effect.blue": "Jump Boost I",
   "tooltip.ghirlande.effect.white": "Knockback I with empty main hand",
   "tooltip.ghirlande.effect.orange": "Fire Resistance",
-  "tooltip.ghirlande.effect.pink": "Tame, breed or heal animals with an empty hand",
+  "tooltip.ghirlande.effect.pink": "Click: tame or heal; Shift + click: breed",
   "tooltip.ghirlande.effect.magenta": "Haste I",
   "tooltip.ghirlande.effect.light_blue": "Respiration I",
   "tooltip.ghirlande.effect.light_gray": "Sneak + right click: bone meal effect",
@@ -30,5 +30,6 @@
 
   "tooltip.ghirlande.charges": "Uses: %s/%s",
   "tooltip.ghirlande.exhausted": "Power exhausted",
+  "tooltip.ghirlande.hold_shift": "Hold Shift to show the flowers",
   "tooltip.ghirlande.flowers": "Flowers used:"
 }

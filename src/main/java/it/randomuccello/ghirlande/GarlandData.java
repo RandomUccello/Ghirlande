@@ -35,6 +35,14 @@ public record GarlandData(GarlandColor color, int charges, List<String> flowers)
 
         GarlandColor color = GarlandColor.byId(data.getStringOr(COLOR, GarlandColor.MIXED.id()));
         int charges = data.getIntOr(CHARGES, color.initialCharges());
+
+        // In 0.1.0 light-gray garlands were passive Resistance garlands and were
+        // stored with -1 charges. From 0.1.1 their power is the 20-use bone-meal
+        // action, so old stacks are interpreted as fresh 20-charge stacks.
+        if (color == GarlandColor.LIGHT_GRAY && charges < 0) {
+            charges = GarlandColor.LIGHT_GRAY.initialCharges();
+        }
+
         ListTag list = data.getListOrEmpty(FLOWERS);
         List<String> flowers = new ArrayList<>(list.size());
         for (int i = 0; i < list.size(); i++) {

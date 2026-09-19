@@ -2,6 +2,7 @@ package it.randomuccello.ghirlande;
 
 import java.util.function.Consumer;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -19,7 +20,12 @@ public final class GarlandItem extends Item {
 
         GarlandData.fromStack(stack).ifPresent(data -> {
             tooltip.accept(Component.translatable("tooltip.ghirlande.color." + data.color().id()).withStyle(ChatFormatting.GRAY));
-            tooltip.accept(Component.translatable("tooltip.ghirlande.effect." + data.color().id()).withStyle(ChatFormatting.GREEN));
+
+            boolean respirationAlreadyShownByVanilla = data.color() == GarlandColor.LIGHT_BLUE
+                    && stack.get(DataComponents.ENCHANTMENTS) != null;
+            if (!respirationAlreadyShownByVanilla) {
+                tooltip.accept(Component.translatable("tooltip.ghirlande.effect." + data.color().id()).withStyle(ChatFormatting.GREEN));
+            }
 
             if (data.color() == GarlandColor.PINK || data.color() == GarlandColor.LIGHT_GRAY) {
                 if (data.charges() > 0) {
@@ -27,13 +33,6 @@ public final class GarlandItem extends Item {
                             .withStyle(ChatFormatting.YELLOW));
                 } else {
                     tooltip.accept(Component.translatable("tooltip.ghirlande.exhausted").withStyle(ChatFormatting.RED));
-                }
-            }
-
-            if (flag.isAdvanced() && !data.flowers().isEmpty()) {
-                tooltip.accept(Component.translatable("tooltip.ghirlande.flowers").withStyle(ChatFormatting.DARK_GRAY));
-                for (String flower : data.flowers()) {
-                    tooltip.accept(Component.literal("  " + flower).withStyle(ChatFormatting.DARK_GRAY));
                 }
             }
         });

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "ghirlande:item/garland_vine_icon"
+  },
+  "gui_light": "front"
+}

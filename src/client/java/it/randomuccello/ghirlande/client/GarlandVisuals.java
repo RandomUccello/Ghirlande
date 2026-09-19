@@ -14,7 +14,7 @@ import net.minecraft.world.item.Items;
  * The graphics prototype deliberately supports only dandelion and poppy with
  * custom sprites. Unsupported flowers return an empty visual instead of
  * falling back to vanilla item models, preventing accidental 3D flowers from
- * leaking into the new flat rendering pipeline.
+ * leaking into the flat rendering pipeline.
  */
 final class GarlandVisuals {
     private static final Identifier DANDELION_ID =
@@ -43,8 +43,8 @@ final class GarlandVisuals {
         return modelStack("visual_vine_icon");
     }
 
-    static ItemStack vineSegment() {
-        return modelStack("visual_vine_segment");
+    static ItemStack vineFace() {
+        return modelStack("visual_vine_face");
     }
 
     private static ItemStack headFor(String rawId, boolean faded) {

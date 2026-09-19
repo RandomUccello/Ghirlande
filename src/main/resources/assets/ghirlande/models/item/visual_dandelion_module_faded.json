@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "ghirlande:item/dandelion_module_faded"
+  },
+  "gui_light": "front"
+}

@@ -15,11 +15,12 @@ import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
 /**
- * Flat dynamic inventory renderer.
+ * Flat dynamic inventory icon.
  *
- * The first three saved flowers (top crafting row / forehead flowers) are
- * prominent. Rear ingredients are only hinted with faded copies over a simple
- * 16x16 green wreath. This keeps the icon flat while preserving the real recipe.
+ * All layers are real two-sided planes. Rear flowers sit on a deeper Z layer,
+ * the vine ring is in the middle, and the three front crafting-row flowers sit
+ * in front. The deterministic depth separation removes the z-fighting present
+ * in alpha.1 while preserving the approved 2D icon composition.
  */
 public final class GarlandIconRenderer implements SpecialModelRenderer<GarlandIconRenderer.RenderData> {
     @Override
@@ -31,42 +32,48 @@ public final class GarlandIconRenderer implements SpecialModelRenderer<GarlandIc
     public void submit(RenderData data, PoseStack poseStack, SubmitNodeCollector collector,
                        int light, int overlay, boolean foil, int outlineColor) {
         List<String> flowers = data.flowers();
-
-        if (flowers.size() >= 8) {
-            submitFlower(GarlandVisuals.fadedModuleFor(flowers.get(5)), 0.36D, 0.38D, -10.0F, 0.47F, 5,
-                    poseStack, collector, light, overlay, outlineColor);
-            submitFlower(GarlandVisuals.fadedModuleFor(flowers.get(6)), 0.50D, 0.34D, 0.0F, 0.47F, 6,
-                    poseStack, collector, light, overlay, outlineColor);
-            submitFlower(GarlandVisuals.fadedModuleFor(flowers.get(7)), 0.64D, 0.38D, 10.0F, 0.47F, 7,
-                    poseStack, collector, light, overlay, outlineColor);
+        if (flowers.isEmpty()) {
+            return;
         }
 
-        submitFlower(GarlandVisuals.vineIcon(), 0.50D, 0.50D, 0.0F, 1.48F, 20,
-                poseStack, collector, light, overlay, outlineColor);
+        // Rear flowers: deliberately faint, small and on the deepest plane.
+        if (flowers.size() >= 8) {
+            submitPlane(GarlandVisuals.fadedHeadFor(flowers.get(5)), 0.37D, 0.39D, 0.44D,
+                    -10.0F, 0.72F, 5, poseStack, collector, light, overlay, outlineColor);
+            submitPlane(GarlandVisuals.fadedHeadFor(flowers.get(6)), 0.50D, 0.35D, 0.44D,
+                    0.0F, 0.72F, 6, poseStack, collector, light, overlay, outlineColor);
+            submitPlane(GarlandVisuals.fadedHeadFor(flowers.get(7)), 0.63D, 0.39D, 0.44D,
+                    10.0F, 0.72F, 7, poseStack, collector, light, overlay, outlineColor);
+        }
 
-        if (!flowers.isEmpty()) {
-            int visible = Math.min(3, flowers.size());
-            double[] xs = {0.31D, 0.50D, 0.69D};
-            double[] ys = {0.59D, 0.62D, 0.59D};
-            float[] rotations = {-9.0F, 0.0F, 9.0F};
+        // One flat wreath silhouette in the middle layer.
+        submitPlane(GarlandVisuals.vineIcon(), 0.50D, 0.50D, 0.50D,
+                0.0F, 0.90F, 20, poseStack, collector, light, overlay, outlineColor);
 
-            for (int i = 0; i < visible; i++) {
-                submitFlower(GarlandVisuals.moduleFor(flowers.get(i)),
-                        xs[i], ys[i], rotations[i], 0.68F, 30 + i,
-                        poseStack, collector, light, overlay, outlineColor);
-            }
+        // Only the three top-row/forehead ingredients are prominent, matching
+        // the approved inventory mock-up.
+        int visible = Math.min(3, flowers.size());
+        double[] xs = {0.32D, 0.50D, 0.68D};
+        double[] ys = {0.58D, 0.61D, 0.58D};
+        float[] rotations = {-8.0F, 0.0F, 8.0F};
+
+        for (int i = 0; i < visible; i++) {
+            submitPlane(GarlandVisuals.headFor(flowers.get(i)),
+                    xs[i], ys[i], 0.57D, rotations[i], 0.92F, 30 + i,
+                    poseStack, collector, light, overlay, outlineColor);
         }
     }
 
-    private static void submitFlower(ItemStack stack, double x, double y, float zRotation, float scale, int seed,
-                                     PoseStack poseStack, SubmitNodeCollector collector,
-                                     int light, int overlay, int outlineColor) {
+    private static void submitPlane(ItemStack stack, double x, double y, double z,
+                                    float zRotation, float scale, int seed,
+                                    PoseStack poseStack, SubmitNodeCollector collector,
+                                    int light, int overlay, int outlineColor) {
         if (stack.isEmpty()) {
             return;
         }
 
         poseStack.pushPose();
-        poseStack.translate(x, y, 0.52D);
+        poseStack.translate(x, y, z);
         poseStack.rotateDegrees(Axis.ZP, zRotation);
         poseStack.scale(scale, scale, scale);
 

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "ghirlande",
+  "version": "${version}",
+  "name": "Ghirlande",
+  "description": "Ghirlande craftabili con fiori vanilla, equipaggiabili sulla testa e dotate di piccoli bonus legati al colore del pigmento.",
+  "authors": ["RandomUccello"],
+  "license": "ARR",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["it.randomuccello.ghirlande.GhirlandeMod"],
+    "client": ["it.randomuccello.ghirlande.client.GhirlandeClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}

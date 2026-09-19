@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:dandelion",
+    "minecraft:sunflower",
+    {"id":"minecraft:wildflowers","required":false},
+    {"id":"minecraft:golden_dandelion","required":false}
+  ]
+}

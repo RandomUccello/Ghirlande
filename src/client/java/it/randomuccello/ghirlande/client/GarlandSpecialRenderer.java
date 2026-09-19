@@ -15,30 +15,51 @@ import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
 /**
- * Flat modular head renderer.
+ * Flat square-perimeter garland renderer.
  *
- * The band and flower heads are deliberately separate. Eight slender green
- * segments form one continuous wreath around the head; then the saved flower
- * heads are placed over that band. Every visual is a two-sided plane with no
- * side faces, so the crown reads as pixel-art rather than as eight miniature
- * 3D item models.
+ * Minecraft heads are square, so the wreath follows the four faces of the head
+ * instead of placing ingredients on a mathematical circle. The eight saved
+ * crafting ingredients keep their crafting-grid order:
+ *
+ * 0 1 2  -> front forehead
+ * 3   4  -> left/right temples
+ * 5 6 7  -> back of the head
+ *
+ * The greenery is rendered as four thin continuous face bands. Flower heads
+ * are independent 2D planes placed on top, so the crown stays delicate and the
+ * blossoms do not inherit bulky stems or overlapping connector geometry.
  */
 public final class GarlandSpecialRenderer implements SpecialModelRenderer<GarlandSpecialRenderer.RenderData> {
-    private static final double BAND_RADIUS = 0.515D;
-    private static final double FLOWER_RADIUS = 0.523D;
-    private static final double BAND_Y = 0.505D;
-    private static final double FLOWER_Y = 0.545D;
+    private static final double BAND_Y = 0.705D;
+    private static final double FLOWER_Y = 0.730D;
+    private static final double FACE_OFFSET = 0.055D;
 
-    // The transparent 16x16 head textures only occupy a small central area, so
-    // this scale yields a visible blossom about one quarter of a head wide.
-    private static final float FLOWER_SCALE = 0.88F;
-    private static final float BAND_SCALE = 0.56F;
+    // Full-width thin band on each face. X is tangent to the face, Y vertical.
+    private static final float BAND_SCALE_X = 1.18F;
+    private static final float BAND_SCALE_Y = 0.55F;
 
-    // 0 1 2 / 3 _ 4 / 5 6 7. Front is the negative-Z side of the local head.
-    private static final float[] ANGLES = {
-            225.0F, 270.0F, 315.0F,
-            180.0F, 0.0F,
-            135.0F, 90.0F, 45.0F
+    // Head sprites are intentionally compact inside their 16x16 canvases.
+    // This scale makes each blossom roughly one fifth to one quarter of a head
+    // wide, matching the approved concept instead of dominating the face.
+    private static final float FLOWER_SCALE = 0.52F;
+
+    // 0 1 2 / 3 _ 4 / 5 6 7. Coordinates follow the square head perimeter.
+    private static final Slot[] FLOWER_SLOTS = {
+            new Slot(0.18D, -FACE_OFFSET, 180.0F),
+            new Slot(0.50D, -FACE_OFFSET, 180.0F),
+            new Slot(0.82D, -FACE_OFFSET, 180.0F),
+            new Slot(-FACE_OFFSET, 0.50D, -90.0F),
+            new Slot(1.0D + FACE_OFFSET, 0.50D, 90.0F),
+            new Slot(0.18D, 1.0D + FACE_OFFSET, 0.0F),
+            new Slot(0.50D, 1.0D + FACE_OFFSET, 0.0F),
+            new Slot(0.82D, 1.0D + FACE_OFFSET, 0.0F)
+    };
+
+    private static final FaceBand[] FACE_BANDS = {
+            new FaceBand(0.50D, -FACE_OFFSET + 0.010D, 180.0F),
+            new FaceBand(-FACE_OFFSET + 0.010D, 0.50D, -90.0F),
+            new FaceBand(1.0D + FACE_OFFSET - 0.010D, 0.50D, 90.0F),
+            new FaceBand(0.50D, 1.0D + FACE_OFFSET - 0.010D, 0.0F)
     };
 
     @Override
@@ -54,12 +75,11 @@ public final class GarlandSpecialRenderer implements SpecialModelRenderer<Garlan
             return;
         }
 
-        // First render a single-looking green band from eight tangent 2D
-        // segments. The segment size is chosen to slightly overlap neighbours,
-        // avoiding gaps without creating the bulky stacked foliage of alpha.1.
-        ItemStack band = GarlandVisuals.vineSegment();
-        for (int i = 0; i < 8; i++) {
-            submitPlane(band, ANGLES[i], BAND_RADIUS, BAND_Y, BAND_SCALE, 100 + i,
+        ItemStack band = GarlandVisuals.vineFace();
+        for (int i = 0; i < FACE_BANDS.length; i++) {
+            FaceBand face = FACE_BANDS[i];
+            submitPlane(band, face.x(), BAND_Y, face.z(), face.yaw(),
+                    BAND_SCALE_X, BAND_SCALE_Y, 100 + i,
                     poseStack, collector, light, overlay, outlineColor);
         }
 
@@ -69,25 +89,27 @@ public final class GarlandSpecialRenderer implements SpecialModelRenderer<Garlan
             if (flower.isEmpty()) {
                 continue;
             }
-            submitPlane(flower, ANGLES[i], FLOWER_RADIUS, FLOWER_Y, FLOWER_SCALE, i,
+
+            Slot slot = FLOWER_SLOTS[i];
+            submitPlane(flower, slot.x(), FLOWER_Y, slot.z(), slot.yaw(),
+                    FLOWER_SCALE, FLOWER_SCALE, i,
                     poseStack, collector, light, overlay, outlineColor);
         }
     }
 
-    private static void submitPlane(ItemStack stack, float degrees, double radius, double y,
-                                    float scale, int seed,
+    private static void submitPlane(ItemStack stack,
+                                    double x, double y, double z, float yaw,
+                                    float scaleX, float scaleY, int seed,
                                     PoseStack poseStack, SubmitNodeCollector collector,
                                     int light, int overlay, int outlineColor) {
-        double angle = Math.toRadians(degrees);
-        double x = 0.5D + Math.cos(angle) * radius;
-        double z = 0.5D + Math.sin(angle) * radius;
+        if (stack.isEmpty()) {
+            return;
+        }
 
         poseStack.pushPose();
         poseStack.translate(x, y, z);
-        // Plane faces radially outward; its local X axis stays tangent to the
-        // wreath so the narrow green segments join the neighbours naturally.
-        poseStack.rotateDegrees(Axis.YP, 90.0F - degrees);
-        poseStack.scale(scale, scale, scale);
+        poseStack.rotateDegrees(Axis.YP, yaw);
+        poseStack.scale(scaleX, scaleY, 1.0F);
 
         ItemStackRenderState renderState = new ItemStackRenderState();
         Minecraft minecraft = Minecraft.getInstance();
@@ -105,8 +127,14 @@ public final class GarlandSpecialRenderer implements SpecialModelRenderer<Garlan
 
     @Override
     public void getExtents(Consumer<Vector3fc> output) {
-        output.accept(new Vector3f(-0.12F, 0.0F, -0.12F));
-        output.accept(new Vector3f(1.12F, 1.05F, 1.12F));
+        output.accept(new Vector3f(-0.18F, 0.0F, -0.18F));
+        output.accept(new Vector3f(1.18F, 1.10F, 1.18F));
+    }
+
+    private record Slot(double x, double z, float yaw) {
+    }
+
+    private record FaceBand(double x, double z, float yaw) {
     }
 
     public record RenderData(List<String> flowers) {

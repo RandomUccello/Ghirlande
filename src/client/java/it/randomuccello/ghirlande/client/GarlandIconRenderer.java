@@ -17,9 +17,8 @@ import org.joml.Vector3fc;
 /**
  * Flat dynamic inventory icon.
  *
- * The icon follows the approved composition: three clear front flowers over a
- * thin wreath, with the rear flowers only suggested. All layers are separated
- * in depth so there is no z-fighting.
+ * Three clear front flowers sit over a thin wreath while three rear flowers are
+ * only suggested. The icon remains a flat 2D composition.
  */
 public final class GarlandIconRenderer implements SpecialModelRenderer<GarlandIconRenderer.RenderData> {
     @Override
@@ -37,15 +36,15 @@ public final class GarlandIconRenderer implements SpecialModelRenderer<GarlandIc
 
         if (flowers.size() >= 8) {
             submitPlane(GarlandVisuals.fadedHeadFor(flowers.get(5)), 0.36D, 0.39D, 0.43D,
-                    -8.0F, 0.48F, 5, poseStack, collector, light, overlay, outlineColor);
+                    -8.0F, 0.36F, 5, poseStack, collector, light, overlay, outlineColor);
             submitPlane(GarlandVisuals.fadedHeadFor(flowers.get(6)), 0.50D, 0.36D, 0.43D,
-                    0.0F, 0.48F, 6, poseStack, collector, light, overlay, outlineColor);
+                    0.0F, 0.36F, 6, poseStack, collector, light, overlay, outlineColor);
             submitPlane(GarlandVisuals.fadedHeadFor(flowers.get(7)), 0.64D, 0.39D, 0.43D,
-                    8.0F, 0.48F, 7, poseStack, collector, light, overlay, outlineColor);
+                    8.0F, 0.36F, 7, poseStack, collector, light, overlay, outlineColor);
         }
 
         submitPlane(GarlandVisuals.vineIcon(), 0.50D, 0.50D, 0.50D,
-                0.0F, 0.92F, 20, poseStack, collector, light, overlay, outlineColor);
+                0.0F, 0.90F, 20, poseStack, collector, light, overlay, outlineColor);
 
         int visible = Math.min(3, flowers.size());
         double[] xs = {0.30D, 0.50D, 0.70D};
@@ -54,7 +53,7 @@ public final class GarlandIconRenderer implements SpecialModelRenderer<GarlandIc
 
         for (int i = 0; i < visible; i++) {
             submitPlane(GarlandVisuals.headFor(flowers.get(i)),
-                    xs[i], ys[i], 0.58D, rotations[i], 0.66F, 30 + i,
+                    xs[i], ys[i], 0.58D, rotations[i], 0.48F, 30 + i,
                     poseStack, collector, light, overlay, outlineColor);
         }
     }

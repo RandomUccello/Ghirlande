@@ -37,7 +37,7 @@ public enum GarlandColor {
     public int initialCharges() {
         return switch (this) {
             case PINK -> 10;
-            case GRAY -> 20;
+            case LIGHT_GRAY -> 20;
             default -> -1;
         };
     }

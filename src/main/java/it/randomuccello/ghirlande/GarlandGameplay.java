@@ -38,6 +38,8 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class GarlandGameplay {
     private static final Identifier RED_HEALTH_ID = GhirlandeMod.id("red_garland_health");
     private static final Identifier WHITE_KNOCKBACK_ID = GhirlandeMod.id("white_garland_knockback");
+    private static final Identifier PARROT_ID = Identifier.fromNamespaceAndPath("minecraft", "parrot");
+    private static final Identifier ZOMBIE_NAUTILUS_ID = Identifier.fromNamespaceAndPath("minecraft", "zombie_nautilus");
 
     private static final AttributeModifier RED_HEALTH =
             new AttributeModifier(RED_HEALTH_ID, 4.0D, AttributeModifier.Operation.ADD_VALUE);
@@ -198,7 +200,6 @@ public final class GarlandGameplay {
 
     private static void refresh(ServerPlayer player, Holder<MobEffect> effect) {
         MobEffectInstance current = player.getEffect(effect);
-        // Never overwrite a stronger external potion/beacon effect.
         if (current != null && current.getAmplifier() > 0) {
             return;
         }
@@ -206,25 +207,22 @@ public final class GarlandGameplay {
     }
 
     private static boolean tryPinkInteraction(ServerPlayer player, Animal animal) {
-        // A parent in love, or an adult in the post-breeding cooldown, is healed instead.
         if ((animal.isInLove() || animal.getAge() > 0) && animal.getHealth() < animal.getMaxHealth()) {
             animal.heal(2.0F);
             return true;
         }
 
-        // Vanilla tameable animals (wolf, cat, parrot, nautilus, etc.).
         if (animal instanceof TamableAnimal tameable && !tameable.isTame()) {
             tameable.tame(player);
             return true;
         }
 
-        // Horses are Animal/OwnableEntity but use their own vanilla taming implementation.
         if (animal instanceof AbstractHorse horse && !horse.isTamed()) {
             return horse.tameWithName(player);
         }
 
-        // Parrots are tameable but intentionally non-breedable in vanilla.
-        if (animal.getType() == EntityType.PARROT || animal.getType() == EntityType.ZOMBIE_NAUTILUS) {
+        Identifier typeId = BuiltInRegistries.ENTITY_TYPE.getKey(animal.getType());
+        if (PARROT_ID.equals(typeId) || ZOMBIE_NAUTILUS_ID.equals(typeId)) {
             return false;
         }
 

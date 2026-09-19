@@ -22,7 +22,6 @@ public final class ModItems {
     }
 
     public static void initialize() {
-        // Forces static registration before recipes and gameplay hooks use the item.
     }
 
     private static ResourceKey<Item> key(String path) {
@@ -30,6 +29,6 @@ public final class ModItems {
     }
 
     private static Item register(String path, Item.Properties properties) {
-        return Registry.register(BuiltInRegistries.ITEM, GhirlandeMod.id(path), new Item(properties));
+        return Registry.register(BuiltInRegistries.ITEM, GhirlandeMod.id(path), new GarlandItem(properties));
     }
 }

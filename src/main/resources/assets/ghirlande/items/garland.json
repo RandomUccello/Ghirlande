@@ -1,9 +1,25 @@
 {
   "model": {
-    "type": "minecraft:special",
-    "base": "ghirlande:item/garland",
-    "model": {
-      "type": "ghirlande:garland"
+    "type": "minecraft:select",
+    "property": "minecraft:display_context",
+    "cases": [
+      {
+        "when": "head",
+        "model": {
+          "type": "minecraft:special",
+          "base": "ghirlande:item/garland",
+          "model": {
+            "type": "ghirlande:garland"
+          }
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:special",
+      "base": "ghirlande:item/garland_icon_base",
+      "model": {
+        "type": "ghirlande:garland_icon"
+      }
     }
   },
   "properties": {

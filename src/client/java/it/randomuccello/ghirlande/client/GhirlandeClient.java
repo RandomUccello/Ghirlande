@@ -18,7 +18,14 @@ import net.minecraft.world.item.Items;
 public final class GhirlandeClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
-        SpecialModelRenderers.ID_MAPPER.put(GhirlandeMod.id("garland"), GarlandSpecialRenderer.Unbaked.MAP_CODEC);
+        SpecialModelRenderers.ID_MAPPER.put(
+                GhirlandeMod.id("garland"),
+                GarlandSpecialRenderer.Unbaked.MAP_CODEC
+        );
+        SpecialModelRenderers.ID_MAPPER.put(
+                GhirlandeMod.id("garland_icon"),
+                GarlandIconRenderer.Unbaked.MAP_CODEC
+        );
 
         ItemTooltipCallback.EVENT.register((stack, tooltipContext, tooltipFlag, lines) -> {
             if (!stack.is(ModItems.GARLAND)) {
